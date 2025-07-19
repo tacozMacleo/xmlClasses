@@ -12,6 +12,7 @@ wheels/
 # Test related files.
 .coverage
 .tox
+test.log
 
 # Others
 .mypy_cache
