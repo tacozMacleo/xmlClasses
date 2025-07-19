@@ -58,6 +58,39 @@ def test_with_float() -> None:
     assert root.data == 42.22
 
 
+def test_with_bytes() -> None:
+    xml_with_string = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        42.22
+    </root>
+    """
+
+    @dataclass
+    class RootString(XmlBaseClass):
+        data: bytes = field(text=True)
+
+    root = RootString.from_string(xml_with_string.strip())
+    assert isinstance(root.data, float)
+    assert root.data == 42.22
+
+
+# UNSURE: Do this even make sense?
+def test_with_none() -> None:
+    xml_with_string = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    @dataclass
+    class RootString(XmlBaseClass):
+        data: None = field(attribute=True)
+
+    root = RootString.from_string(xml_with_string.strip())
+    assert root.data is None
+
+
+
 def test_with_attribute() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -216,6 +249,27 @@ def test_with_element_tuple() -> None:
     assert root.value[1].data == "data2"
 
 
+def test_with_element_set() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value>data1</value>
+    </root>
+    """
+
+    @dataclass
+    class Value(XmlBaseClass):
+        data: str = field(text=True)
+
+    @dataclass
+    class RootElement(XmlBaseClass):
+        value: set[Value] = field(element=True)
+
+    with pytest.raises(NotImplementedError, match="Sets are not supported"):
+        RootElement.from_string(xml_with_element.strip())
+
+
+
 def test_with_element_list_with_text_field_union() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -334,5 +388,5 @@ def test_fail_on_data_flatting_element() -> None:
     class RootElement(XmlBaseClass):
         value: Value = field(alias="subValue", element=True)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Expected exactly one "subValue" element. Found: 0'):
         RootElement.from_string(xml_with_element.strip())
