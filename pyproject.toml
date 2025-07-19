@@ -9,6 +9,14 @@ authors = [
 requires-python = ">=3.10"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "ipython>=8.37.0",
+    "rich>=14.0.0",
+    "tox>=4.27.0",
+    "tox-uv>=1.26.1",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -117,12 +125,3 @@ message = "Bump version: {current_version} → {new_version}"
 filename = "src/xmlclasses/__init__.py"
 search = '__version__ = "v{current_version}"'
 replace = '__version__ = "v{new_version}"'
-
-[dependency-groups]
-dev = [
-    "ipython>=8.37.0",
-    "rich>=14.0.0",
-    "tox>=4.27.0",
-    "tox-uv>=1.26.1",
-]
-
