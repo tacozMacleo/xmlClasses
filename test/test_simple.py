@@ -1,10 +1,14 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Literal
-from xmlclasses import field
+import base64
+import uuid
+
+import pytest
+
 from xmlclasses import XmlBaseClass
 from xmlclasses import XmlParserError
-import pytest
-from enum import Enum
+from xmlclasses import field
 
 
 def test_with_string() -> None:
@@ -58,26 +62,76 @@ def test_with_float() -> None:
     assert root.data == 42.22
 
 
-def test_with_bytes() -> None:
-    xml_with_string = """
+def test_with_cdata() -> None:  # CDATA
+    xml_with_cdata = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        42.22
+        <code>
+<![CDATA[
+let message = (login == 'Employee') ? 'Hello' :
+  (login == 'Director') ? 'Hello, boss' :
+  (login == '') ? 'No login' :
+  '';
+]]>
+        </code>
+    </root>
+    """
+
+    @dataclass
+    class Value(XmlBaseClass):
+        data: str = field(text=True)
+
+    @dataclass
+    class RootElement(XmlBaseClass):
+        code: Value = field(element=True)
+
+    root = RootElement.from_string(xml_with_cdata.strip())
+    assert isinstance(root.code.data, str)
+    assert isinstance(root.code, Value)
+    assert root.code.data == "let message = (login == 'Employee') ? 'Hello' :\n  (login == 'Director') ? 'Hello, boss' :\n  (login == '') ? 'No login' :\n  '';"
+
+
+# def test_with_bytes() -> None:
+#     xml_with_base64 = """
+#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+#     <root>
+#         "443"
+#     </root>
+#     """
+
+#     @dataclass
+#     class RootString(XmlBaseClass):
+#         data: bytes = field(text=True)
+
+#     root = RootString.from_string(xml_with_base64.strip())
+#     assert isinstance(root.data, float)
+#     assert root.data == 42.22
+
+
+
+def test_with_uuid() -> None:
+    uuid_value = uuid.uuid4()
+    xml_with_uuid = f"""
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        {uuid_value}
     </root>
     """
 
     @dataclass
     class RootString(XmlBaseClass):
-        data: bytes = field(text=True)
+        data: uuid.UUID = field(text=True)
 
-    root = RootString.from_string(xml_with_string.strip())
-    assert isinstance(root.data, float)
-    assert root.data == 42.22
+    root = RootString.from_string(xml_with_uuid.strip())
+    assert isinstance(root.data, uuid.UUID)
+    assert root.data == uuid_value
+
+
 
 
 # UNSURE: Do this even make sense?
 def test_with_none() -> None:
-    xml_with_string = """
+    xml_with_none = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root />
     """
@@ -86,7 +140,7 @@ def test_with_none() -> None:
     class RootString(XmlBaseClass):
         data: None = field(attribute=True)
 
-    root = RootString.from_string(xml_with_string.strip())
+    root = RootString.from_string(xml_with_none.strip())
     assert root.data is None
 
 
@@ -390,3 +444,22 @@ def test_fail_on_data_flatting_element() -> None:
 
     with pytest.raises(ValueError, match='Expected exactly one "subValue" element. Found: 0'):
         RootElement.from_string(xml_with_element.strip())
+
+
+def test_decoder_with_base64() -> None:
+    data = "42.22"
+    xml_with_base64 = f"""
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        {base64.b64encode(data.encode()).decode()}
+    </root>
+    """
+
+    @dataclass
+    class RootString(XmlBaseClass):
+        data: str = field(text=True, decoder=base64.b64decode)
+
+    root = RootString.from_string(xml_with_base64.strip())
+    assert isinstance(root.data, str)
+    assert root.data == data
+
