@@ -143,6 +143,7 @@ def _handle_xml_base_field(field: XmlBaseType, dom: ET.Element, name: str):
 
 
 def _get_value(field: XmlBaseType, dom: ET.Element, name: str):
+    # TODO: test for 'XmlTextField', 'XmlElementField' and 'XmlAttributeField' first.
     field_type = field.type
     field_alias = _get_name(field)
 
@@ -168,6 +169,7 @@ def _get_value(field: XmlBaseType, dom: ET.Element, name: str):
 
 
 
+# TODO: Change this to take make use of the more modern typing features.
 T = typing.TypeVar("T", str, int, float, bool, datetime.datetime, uuid.UUID, XmlBaseClass, None)
 
 
@@ -185,15 +187,16 @@ def _convert(
         datetime.datetime: lambda x: datetime.datetime.fromisoformat(x),
         uuid.UUID: lambda x: uuid.UUID(x),
         XmlBaseClass: lambda x: XmlBaseClass.from_string(x),
-        None: lambda x: None,
-        types.NoneType: lambda x: None,
+        None: lambda _: None,
+        types.NoneType: lambda _: None,
         typing.Any: lambda x: x,
     }
     with error_handler(dom, field_alias):
         if isinstance(data, ET.Element):
             if issubclass(field_type, XmlBaseClass):
                 return field_type.from_element(data)
-            raise ValueError(f"Expected XmlBaseClass. Found: {field_type}")
+            msg = f"Expected XmlBaseClass. Found: {field_type}"
+            raise ValueError(msg)
 
         if typing.get_origin(field_type) == typing.Literal:
             if data in typing.get_args(field_type):
