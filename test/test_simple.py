@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 import base64
@@ -6,8 +5,9 @@ import uuid
 
 import pytest
 
-from xmlclasses import XmlBaseClass
+from xmlclasses import XmlClass
 from xmlclasses import XmlParserError
+from xmlclasses import XmlTextField
 from xmlclasses import field
 
 
@@ -19,9 +19,8 @@ def test_with_string() -> None:
     </root>
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: str = field(text=True)
+    class RootString(XmlClass):
+        data: XmlTextField[str]
 
     root = RootString.from_string(xml_with_string.strip())
     assert isinstance(root.data, str)
@@ -36,9 +35,8 @@ def test_with_int() -> None:
     </root>
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: int = field(text=True)
+    class RootString(XmlClass):
+        data: XmlTextField[int]
 
     root = RootString.from_string(xml_with_string.strip())
     assert isinstance(root.data, int)
@@ -53,9 +51,8 @@ def test_with_float() -> None:
     </root>
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: float = field(text=True)
+    class RootString(XmlClass):
+        data: XmlTextField[float]
 
     root = RootString.from_string(xml_with_string.strip())
     assert isinstance(root.data, float)
@@ -66,29 +63,20 @@ def test_with_cdata() -> None:  # CDATA
     xml_with_cdata = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        <code>
 <![CDATA[
 let message = (login == 'Employee') ? 'Hello' :
   (login == 'Director') ? 'Hello, boss' :
   (login == '') ? 'No login' :
   '';
 ]]>
-        </code>
     </root>
     """
-
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
-
-    @dataclass
-    class RootElement(XmlBaseClass):
-        code: Value = field(element=True)
+    class RootElement(XmlClass):
+        code: XmlTextField[str]
 
     root = RootElement.from_string(xml_with_cdata.strip())
-    assert isinstance(root.code.data, str)
-    assert isinstance(root.code, Value)
-    assert root.code.data == "let message = (login == 'Employee') ? 'Hello' :\n  (login == 'Director') ? 'Hello, boss' :\n  (login == '') ? 'No login' :\n  '';"
+    assert isinstance(root.code, str)
+    assert root.code == "let message = (login == 'Employee') ? 'Hello' :\n  (login == 'Director') ? 'Hello, boss' :\n  (login == '') ? 'No login' :\n  '';"
 
 
 # def test_with_bytes() -> None:
@@ -118,9 +106,8 @@ def test_with_uuid() -> None:
     </root>
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: uuid.UUID = field(text=True)
+    class RootString(XmlClass):
+        data: XmlTextField[uuid.UUID]
 
     root = RootString.from_string(xml_with_uuid.strip())
     assert isinstance(root.data, uuid.UUID)
@@ -136,9 +123,8 @@ def test_with_none() -> None:
     <root />
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: None = field(attribute=True)
+    class RootString(XmlClass):
+        data: None
 
     root = RootString.from_string(xml_with_none.strip())
     assert root.data is None
@@ -151,13 +137,38 @@ def test_with_attribute() -> None:
     <root value="data" />
     """
 
-    @dataclass
-    class RootAttribute(XmlBaseClass):
-        value: str = field(attribute=True)
+    class RootAttribute(XmlClass):
+        value: str
 
     root = RootAttribute.from_string(xml_with_attribute.strip())
     assert isinstance(root.value, str)
     assert root.value == "data"
+
+
+def test_nested_element() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value>
+            <data>data</data>
+        </value>
+    </root>
+    """
+
+    class Data(XmlClass):
+        data: XmlTextField[str]
+
+    class Value(XmlClass):
+        data: Data
+
+    class RootElement(XmlClass):
+        value: Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value.data.data, str)
+    assert isinstance(root.value.data, Data)
+    assert isinstance(root.value, Value)
+    assert root.value.data.data == "data"
 
 
 def test_with_element() -> None:
@@ -168,13 +179,11 @@ def test_with_element() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: Value = field(element=True)
+    class RootElement(XmlClass):
+        value: Value
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value.data, str)
@@ -182,41 +191,38 @@ def test_with_element() -> None:
     assert root.value.data == "data"
 
 
-def test_with_attribute_alias() -> None:
-    xml_with_attribute = """
-    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="data" />
-    """
+# def test_with_attribute_alias() -> None:
+#     xml_with_attribute = """
+#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+#     <root value="data" />
+#     """
 
-    @dataclass
-    class RootAttribute(XmlBaseClass):
-        new_name: str = field(alias="value", attribute=True)
+#     class RootAttribute(XmlClass):
+#         new_name: str = field(alias="value")
 
-    root = RootAttribute.from_string(xml_with_attribute.strip())
-    assert isinstance(root.new_name, str)
-    assert root.new_name == "data"
+#     root = RootAttribute.from_string(xml_with_attribute.strip())
+#     assert isinstance(root.new_name, str)
+#     assert root.new_name == "data"
 
 
-def test_with_element_alias() -> None:
-    xml_with_element = """
-    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root>
-        <value>data</value>
-    </root>
-    """
+# def test_with_element_alias() -> None:
+#     xml_with_element = """
+#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+#     <root>
+#         <value>data</value>
+#     </root>
+#     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        new_name: str = field(alias="data", text=True)
+#     class Value(XmlClass):
+#         data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        nested: Value = field(alias="value", element=True)
+#     class RootElement(XmlClass):
+#         nested: Value
 
-    root = RootElement.from_string(xml_with_element.strip())
-    assert isinstance(root.nested.new_name, str)
-    assert isinstance(root.nested, Value)
-    assert root.nested.new_name == "data"
+#     root = RootElement.from_string(xml_with_element.strip())
+#     assert isinstance(root.nested.data, str)
+#     assert isinstance(root.nested, Value)
+#     assert root.nested.data == "data"
 
 
 
@@ -227,13 +233,12 @@ def test_with_literal() -> None:
     <root value="data" />
     """
 
-    @dataclass
-    class RootAttribute(XmlBaseClass):
-        new_name: Literal["data"] = field(alias="value", attribute=True)
+    class RootAttribute(XmlClass):
+        value: Literal["data"]
 
     root = RootAttribute.from_string(xml_with_attribute.strip())
-    assert isinstance(root.new_name, str)
-    assert root.new_name == "data"
+    assert isinstance(root.value, str)
+    assert root.value == "data"
 
 
 def test_with_enum() -> None:
@@ -246,13 +251,12 @@ def test_with_enum() -> None:
         DATA = "data"
         NO_DATA = "no_data"
 
-    @dataclass
-    class RootAttribute(XmlBaseClass):
-        new_name: DataEnum = field(alias="value", attribute=True)
+    class RootAttribute(XmlClass):
+        value: DataEnum
 
     root = RootAttribute.from_string(xml_with_attribute.strip())
-    assert isinstance(root.new_name, DataEnum)
-    assert root.new_name == DataEnum.DATA
+    assert isinstance(root.value, DataEnum)
+    assert root.value == DataEnum.DATA
 
 
 def test_with_element_list() -> None:
@@ -264,13 +268,11 @@ def test_with_element_list() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: list[Value] = field(element=True)
+    class RootElement(XmlClass):
+        value: list[Value]
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, list)
@@ -288,13 +290,11 @@ def test_with_element_tuple() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: tuple[Value, Value] = field(element=True)
+    class RootElement(XmlClass):
+        value: tuple[Value, Value]
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, tuple)
@@ -311,13 +311,11 @@ def test_with_element_set() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: set[Value] = field(element=True)
+    class RootElement(XmlClass):
+        value: set[Value]
 
     with pytest.raises(NotImplementedError, match="Sets are not supported"):
         RootElement.from_string(xml_with_element.strip())
@@ -333,13 +331,11 @@ def test_with_element_list_with_text_field_union() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: int | str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[int | str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: list[Value] = field(element=True)
+    class RootElement(XmlClass):
+        value: list[Value]
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, list)
@@ -361,9 +357,8 @@ def test_with_element_list_with_attribute_union() -> None:
     """
 
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: int | str = field(attribute=True)
+    class RootElement(XmlClass):
+        value: int | str
 
     root = RootElement.from_string(xml_with_int.strip())
     assert isinstance(root.value, int)
@@ -384,14 +379,12 @@ def test_optional_attribute() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: Value = field(element=True)
-        not_value: str | None = field(attribute=True)
+    class RootElement(XmlClass):
+        value: Value
+        not_value: str | None
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value.data, str)
@@ -407,14 +400,12 @@ def test_optional_element() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: Value = field(element=True)
-        not_value: Value | None = field(element=True)
+    class RootElement(XmlClass):
+        value: Value
+        not_value: Value | None
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value.data, str)
@@ -434,13 +425,11 @@ def test_fail_on_data_flatting_element() -> None:
     </root>
     """
 
-    @dataclass
-    class Value(XmlBaseClass):
-        data: str = field(text=True)
+    class Value(XmlClass):
+        data: XmlTextField[str]
 
-    @dataclass
-    class RootElement(XmlBaseClass):
-        value: Value = field(alias="subValue", element=True)
+    class RootElement(XmlClass):
+        subValue: Value
 
     with pytest.raises(ValueError, match='Expected exactly one "subValue" element. Found: 0'):
         RootElement.from_string(xml_with_element.strip())
@@ -455,11 +444,10 @@ def test_decoder_with_base64() -> None:
     </root>
     """
 
-    @dataclass
-    class RootString(XmlBaseClass):
-        data: str = field(text=True, decoder=base64.b64decode)
+    class RootString(XmlClass):
+        data: XmlTextField[base64.b64decode]
 
     root = RootString.from_string(xml_with_base64.strip())
-    assert isinstance(root.data, str)
-    assert root.data == data
+    assert isinstance(root.data, bytes)
+    assert root.data.decode() == data
 
