@@ -11,5 +11,7 @@ NOTE:
 
 TODO:
 ===================================================================
- * [ ] Merge the class warpper and inheritance together.
+ * [ ] Merge the class wrapper and inheritance together.
  * [ ] Fix ALL type hints...
+ * [ ] Add support for decoder and encoder.
+ * [ ] Make a design plan & decision for XML classes.
