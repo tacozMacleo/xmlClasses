@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import datetime
 import enum
-import inspect
 import pathlib
 import types
 import typing
@@ -83,7 +82,7 @@ def is_union(obj: type) -> typing.TypeGuard[type[types.UnionType]]:
 
 
 def is_xml_class(obj: type) -> typing.TypeGuard[type[XmlClass]]:
-    return inspect.isclass(obj) and issubclass(obj, XmlClass)
+    return isinstance(obj, type) and issubclass(obj, XmlClass)
 
 
 def is_literal(obj: type) -> typing.TypeGuard[type[typing.Literal]]:
