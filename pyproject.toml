@@ -12,7 +12,9 @@ dependencies = []
 [dependency-groups]
 dev = [
     "ipython>=8.37.0",
+    "pytest>=8.4.1",
     "rich>=14.0.0",
+    "taskipy>=1.14.1",
     "tox>=4.27.0",
     "tox-uv>=1.26.1",
 ]
@@ -116,6 +118,18 @@ ignore_errors = true
 # omit = [
 #     ".tox/*",
 # ]
+
+################################## Taskipy #################################
+[tool.taskipy.settings]
+use_vars = true
+
+[tool.taskipy.variables]
+# testfunc = "test/test_simple.py::test_with_element_list_with_attribute_union test/test_simple.py::test_with_element_list_with_text_field_union"
+testfunc = "test/test_simple.py::test_with_element_list_with_attribute_union"
+
+[tool.taskipy.tasks]
+test = {cmd = "pytest -v {testfunc}", help = "Run Sub tests for current development."}
+
 
 ############################## Bump My Version #############################
 [tool.bumpversion]
