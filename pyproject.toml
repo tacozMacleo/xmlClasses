@@ -1,7 +1,7 @@
 [project]
 name = "xmlclasses"
 version = "0.1.0"
-description = "XML parser defined by classes."
+description = "Simple, fast, lightweight xml parser and validator defined by classes."
 readme = "README.md"
 authors = [
     { name = "Michael Bach Kristensen", email = "tacoz666@gmail.com" }
