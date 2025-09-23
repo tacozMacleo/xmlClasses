@@ -39,6 +39,9 @@ lint.ignore = [
     "S101",
     "INP001",
 ]
+"xml_elementTree_utils.py" = [
+    "N999",
+]
 
 ################################## PyTest ##################################
 [tool.pytest.ini_options]

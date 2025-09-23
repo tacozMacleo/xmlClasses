@@ -8,7 +8,7 @@ import pytest
 from xmlclasses import XmlClass
 from xmlclasses import XmlParserError
 from xmlclasses import XmlTextField
-from xmlclasses import field
+# from xmlclasses import field
 
 
 def test_with_string() -> None:
@@ -28,10 +28,11 @@ def test_with_string() -> None:
 
 
 def test_with_int() -> None:
-    xml_with_string = """
+    int_value = 42
+    xml_with_string = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        42
+        {int_value}
     </root>
     """
 
@@ -40,14 +41,15 @@ def test_with_int() -> None:
 
     root = RootString.from_string(xml_with_string.strip())
     assert isinstance(root.data, int)
-    assert root.data == 42
+    assert root.data == int_value
 
 
 def test_with_float() -> None:
-    xml_with_string = """
+    float_value = 42.22
+    xml_with_string = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        42.22
+        {float_value}
     </root>
     """
 
@@ -56,7 +58,7 @@ def test_with_float() -> None:
 
     root = RootString.from_string(xml_with_string.strip())
     assert isinstance(root.data, float)
-    assert root.data == 42.22
+    assert root.data == float_value
 
 
 def test_with_cdata() -> None:  # CDATA
@@ -76,7 +78,12 @@ let message = (login == 'Employee') ? 'Hello' :
 
     root = RootElement.from_string(xml_with_cdata.strip())
     assert isinstance(root.code, str)
-    assert root.code == "let message = (login == 'Employee') ? 'Hello' :\n  (login == 'Director') ? 'Hello, boss' :\n  (login == '') ? 'No login' :\n  '';"
+    assert root.code == (
+        "let message = (login == 'Employee') ? 'Hello' :\n"
+        "  (login == 'Director') ? 'Hello, boss' :\n"
+        "  (login == '') ? 'No login' :\n"
+        "  '';"
+    )
 
 
 # def test_with_bytes() -> None:
@@ -267,6 +274,7 @@ def test_with_element_list() -> None:
         <value>data2</value>
     </root>
     """
+    value_count = 2
 
     class Value(XmlClass):
         data: XmlTextField[str]
@@ -276,7 +284,7 @@ def test_with_element_list() -> None:
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, list)
-    assert len(root.value) == 2
+    assert len(root.value) == value_count
     assert root.value[0].data == "data1"
     assert root.value[1].data == "data2"
 
@@ -289,6 +297,8 @@ def test_with_element_tuple() -> None:
         <value>data2</value>
     </root>
     """
+    value_count = 2
+
 
     class Value(XmlClass):
         data: XmlTextField[str]
@@ -298,7 +308,7 @@ def test_with_element_tuple() -> None:
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, tuple)
-    assert len(root.value) == 2
+    assert len(root.value) == value_count
     assert root.value[0].data == "data1"
     assert root.value[1].data == "data2"
 
@@ -323,11 +333,15 @@ def test_with_element_set() -> None:
 
 
 def test_with_element_list_with_text_field_union() -> None:
-    xml_with_element = """
+    the_int = 2
+    the_str = "data"
+    value_count = 2
+
+    xml_with_element = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        <value>data</value>
-        <value>2</value>
+        <value>{the_str}</value>
+        <value>{the_int}</value>
     </root>
     """
 
@@ -339,20 +353,23 @@ def test_with_element_list_with_text_field_union() -> None:
 
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value, list)
-    assert len(root.value) == 2
-    assert root.value[0].data == "data"
-    assert root.value[1].data == 2
+    assert len(root.value) == value_count
+    assert root.value[0].data == the_str
+    assert root.value[1].data == the_int
 
 
 def test_with_element_list_with_attribute_union() -> None:
-    xml_with_int = """
+    the_int = 2
+    the_str = "data"
+
+    xml_with_int = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="2">
+    <root value="{the_int}">
     </root>
     """
-    xml_with_str = """
+    xml_with_str = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="data">
+    <root value="{the_str}">
     </root>
     """
 
@@ -362,11 +379,11 @@ def test_with_element_list_with_attribute_union() -> None:
 
     root = RootElement.from_string(xml_with_int.strip())
     assert isinstance(root.value, int)
-    assert root.value == 2
+    assert root.value == the_int
 
     root = RootElement.from_string(xml_with_str.strip())
     assert isinstance(root.value, str)
-    assert root.value == "data"
+    assert root.value == the_str
 
 
 
@@ -429,9 +446,9 @@ def test_fail_on_data_flatting_element() -> None:
         data: XmlTextField[str]
 
     class RootElement(XmlClass):
-        subValue: Value
+        sub_value: Value
 
-    with pytest.raises(ValueError, match='Expected exactly one "subValue" element. Found: 0'):
+    with pytest.raises(XmlParserError, match='Expected exactly one "sub_value" element. Found: 0'):
         RootElement.from_string(xml_with_element.strip())
 
 
