@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import builtins
 import datetime
 import enum
@@ -14,7 +12,6 @@ from .base_types import XmlTextField
 from .error_handlers import error_handler
 
 from .xml_elementTree_utils import _get_child_from
-from .xml_elementTree_utils import _get_data
 
 
 @typing.dataclass_transform()
@@ -46,6 +43,8 @@ class XmlClass:
 
         ## TODO: Use this to generate the wanted stuff.
         ## cls.__dataclass_transform__
+
+    # TODO: Add def to_string(self) -> str:
 
     @classmethod
     def from_element(cls, dom: ET.Element) -> typing.Self:
@@ -92,18 +91,20 @@ def is_literal(obj: type) -> typing.TypeGuard[type[typing.Literal]]:
 def is_enum(obj: type) -> typing.TypeGuard[type[enum.EnumMeta]]:
     return type(obj) is enum.EnumMeta
 
+# TODO: Change this to take make use of the more modern typing features.
+T = typing.TypeVar("T", str, int, float, bool, datetime.datetime, uuid.UUID, XmlClass)
 
 bool_true_values = ["true", "1", "yes", "on"]
 bool_false_values = ["false", "0", "no", "off"]
 
-def _handle_none(name: str, field_type: types.UnionType, dom: ET.Element, parent_name: str):
+def _handle_none(name: str, field_type: types.UnionType, dom: ET.Element, parent_name: str) -> None:
     return None
 
-def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element, parent_name: str):
+def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, parent_name: str) -> T:
     # TODO: Refactor this.
     # NOTE: dom is also be a data type.
     child_tags = {x.tag for x in dom}
-    if name not in dom.keys() and name not in child_tags:
+    if name not in dom.keys() and name not in child_tags and not is_xml_text_field(field_type):
         if types.NoneType not in typing.get_args(field_type):
             msg = f"Missing {name} in {dom.tag}, with attributes {dom.attrib} and children {child_tags}"
             raise ValueError(msg)
@@ -111,14 +112,23 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element, parent_na
 
     for d_type in typing.get_args(field_type):
         try:
-            return _convert(d_type, name, _get_data(field_type, dom, name), dom, dom.tag)
-            break
+            print(f"{d_type=}, {name=}, {field_type=}, {dom=}, {parent_name=}")
+            return _convert(d_type, name, dom.attrib[name], dom, dom.tag)
         except ValueError:
             pass
-    else:
-        msg = f"Unable to convert {name} to any of {typing.get_args(field_type)}"
-        with error_handler(dom, name):
-            raise ValueError(msg)
+    msg = f"Unable to convert {name} to any of {typing.get_args(field_type)}"
+    with error_handler(dom, name):
+        raise ValueError(msg)
+
+def _handle_textfield_union(name: str, field_type: XmlBaseType, dom: ET.Element, parent_name: str) -> T:
+    for d_type in typing.get_args(field_type):
+        try:
+            return _convert(d_type, name, dom.text.strip(), dom, parent_name)
+        except ValueError:
+            pass
+    msg = f"Unable to convert {name} to any of {typing.get_args(field_type)}"
+    with error_handler(dom, name):
+        raise ValueError(msg)
 
 
 def _handle_xml_text_field(
@@ -130,16 +140,16 @@ def _handle_xml_text_field(
     # NOTE: Assume that is can only be Union or "normal" data types.
     sub_type = typing.get_args(field_type)[0]
     if is_union(sub_type):
-        return _handle_union(name, sub_type, dom.text.strip(), parent_name)
+        return _handle_textfield_union(name, sub_type, dom, parent_name)
     return _convert(sub_type, name, dom.text.strip(), dom, parent_name)
 
 
 def _handle_list(
     field_alias: str,
-    field_type: type[list],
+    field_type: type[list[T]],
     dom: ET.Element,
     parent_name: str,
-) -> list:
+) -> list[T]:
     # NOTE: Assume that this children can only be of type: XmlClass.
     return [
         # _get_value(
@@ -204,9 +214,6 @@ def _get_value(
         case _:
             return _convert(field_type, name, dom.attrib.get(name), dom, parent_name)
 
-# TODO: Change this to take make use of the more modern typing features.
-T = typing.TypeVar("T", str, int, float, bool, datetime.datetime, uuid.UUID, XmlClass)
-
 
 def _convert(
     field_type: type[T] | None,
@@ -240,7 +247,7 @@ def _convert(
                 return data
 
             case None:
-                # Should check the data, right?
+                # UNSURE: Should check the data, right?
                 return _handle_none(field_alias, field_type, dom, parent_name)
 
             case _ if is_xml_class(field_type):
