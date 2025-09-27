@@ -259,12 +259,12 @@ def _convert(
             case _ if is_literal(field_type):
                 if data in typing.get_args(field_type):
                     return data
-                msg = f"Literal value {data} not in {typing.get_args(field_type)}"
+                msg = f'Literal value "{data}" not in the defined values: {typing.get_args(field_type)}'
                 raise ValueError(msg)
 
             case _ if is_enum(field_type):
                 return field_type(data)
 
             case _:
-                msg = f"Unknown type: {field_type}"
+                msg = f"Unknown type: {field_type.__name__}"
                 raise ValueError(msg)

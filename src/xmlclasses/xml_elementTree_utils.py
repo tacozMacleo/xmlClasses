@@ -7,5 +7,5 @@ def _get_child_from(tag: str, dom: ET.Element, *, single: bool = False) -> list[
     for child in dom:
         if child.tag == tag:
             return child
-    msg = f"Could not find {tag} in {dom.tag}"
+    msg = f'Could not find "{tag}" in "{dom.tag}"'
     raise ValueError(msg)
