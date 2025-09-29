@@ -17,12 +17,16 @@ def error_handler(data: ET.Element, name: str) -> typing.Generator[None, None, N
     try:
         yield
     except XmlParserError as e:
-        error_msg = str(e)
-        error_msg += f'\nError in "{name}" while parsing tag: "{data.tag}".'
+        error_msg = f'Error in "{name}" while parsing tag: "{data.tag}".\n'
+        error_msg += str(e)
         raise XmlParserError(error_msg) from e
     except KeyError as e:
         error_msg = f'Error in "{name}" while parsing tag: "{data.tag}", with attributes: {data.attrib}\n'
         error_msg += f"Could not find key: {e!s}"
+        raise XmlParserError(error_msg) from e
+    except ValueError as e:
+        error_msg = f'Error in "{name}" while parsing tag: "{data.tag}", with attributes: {data.attrib}\n'
+        error_msg += str(e)
         raise XmlParserError(error_msg) from e
     except Exception as e:
         error_msg = f'Error in "{name}" while parsing tag: "{data.tag}", with attributes: {data.attrib}\n'

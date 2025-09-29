@@ -199,8 +199,6 @@ def test_extra_text_field() -> None:
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
-
-
 def test_extra_element() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -220,3 +218,39 @@ def test_extra_element() -> None:
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
+def test_nested_deep_element_error() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value>
+            <subValue>
+                <subsubValue>data</subsubValue>
+            </subValue>
+        </value>
+    </root>
+    """
+
+    class SubSubValue(XmlClass):
+        value_subsubValue: XmlTextField[int | float]
+
+    class SubValue(XmlClass):
+        subsubValue: SubSubValue
+
+    class Value(XmlClass):
+        subValue: SubValue
+
+    class RootAttribute(XmlClass):
+        value: Value
+
+    with pytest.raises(
+        XmlParserError,
+        match=re.escape(
+    """Error in "value" while parsing tag: "root".
+Error in "subValue" while parsing tag: "value".
+Error in "subsubValue" while parsing tag: "subValue".
+Error in "value_subsubValue" while parsing tag: "subsubValue".
+Error in "value_subsubValue" while parsing tag: "subsubValue", with attributes: {}
+Unable to convert "value_subsubValue"'s value: "data" to any of (int, float)""",
+        ),
+    ):
+        RootAttribute.from_string(xml_with_attribute.strip())
