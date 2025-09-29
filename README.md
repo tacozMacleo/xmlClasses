@@ -1,7 +1,13 @@
 XML Classes
 ===================================================================
 
-Simple, fast, lightweight xml parser and validator defined by classes.
+Simple, fast, lightweight xml parser and validator defined by classes,
+and useful error messages.
+
+Reason to pick this over other xml parsers:
+ * Non alias. (Harder to match tag/attribute name with the class variable name)
+ * Need advanced features. (Like default factory, custom decoder, custom encoder etc.)
+
 
 TODO: Speed test against `pydantic-xml` and `xmltodict` with `pydantic`.
 
