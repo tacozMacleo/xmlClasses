@@ -118,6 +118,15 @@ def test_with_element_tuple() -> None:
     assert root.value[1].data == "data2"
 
 
+def test_no_xml_tag() -> None:
+    xml_with_element = "<root />"
+
+    class RootElement(XmlClass):
+        value: None
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert root.value is None
+
 def test_with_element_set() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
