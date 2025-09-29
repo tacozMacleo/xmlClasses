@@ -91,14 +91,31 @@ def is_literal(obj: type) -> typing.TypeGuard[type[typing.Literal]]:
 def is_enum(obj: type) -> typing.TypeGuard[type[enum.EnumMeta]]:
     return type(obj) is enum.EnumMeta
 
+
 # TODO: Change this to take make use of the more modern typing features.
 T = typing.TypeVar("T", str, int, float, bool, datetime.datetime, uuid.UUID, XmlClass)
 
 bool_true_values = ["true", "1", "yes", "on"]
 bool_false_values = ["false", "0", "no", "off"]
 
-def _handle_none(name: str, field_type: types.UnionType, dom: ET.Element, parent_name: str) -> None:
+
+def _convert_boolean(data: str) -> bool:
+    if data.lower() not in bool_true_values + bool_false_values:
+        msg = f"Boolean value {data} not in {bool_true_values} or {bool_false_values}"
+        raise ValueError(msg)
+    return data.lower() in bool_true_values
+
+
+def _convert_literal(data: str, field_type: typing.Literal) -> T:
+    if data not in typing.get_args(field_type):
+        msg = f'Literal value "{data}" not in the defined values: {typing.get_args(field_type)}'
+        raise ValueError(msg)
+    return data
+
+
+def _handle_none(field_type: types.UnionType, data: ET.Element | str | None) -> None:
     return None
+
 
 def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, parent_name: str) -> T:
     # TODO: Refactor this.
@@ -106,27 +123,27 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
     child_tags = {x.tag for x in dom}
     if name not in dom.keys() and name not in child_tags and not is_xml_text_field(field_type):
         if types.NoneType not in typing.get_args(field_type):
-            msg = f"Missing {name} in {dom.tag}, with attributes {dom.attrib} and children {child_tags}"
+            msg = f'Missing "{name}" in "{dom.tag}", with attributes: {dom.attrib} and children: {child_tags}'
             raise ValueError(msg)
-        return _handle_none(name, field_type, dom, dom.tag)
+        return _handle_none(field_type, dom)
 
     for d_type in typing.get_args(field_type):
         try:
-            print(f"{d_type=}, {name=}, {field_type=}, {dom=}, {parent_name=}")
-            return _convert(d_type, name, dom.attrib[name], dom, dom.tag)
+            return _convert_attribute(d_type, name, dom)
         except ValueError:
             pass
-    msg = f"Unable to convert {name} to any of {typing.get_args(field_type)}"
+    msg = f'Unable to convert "{name}"\'s value: "{dom.attrib[name]}" to any of ({", ".join(x.__name__ for x in typing.get_args(field_type))})'
     with error_handler(dom, name):
         raise ValueError(msg)
+
 
 def _handle_textfield_union(name: str, field_type: XmlBaseType, dom: ET.Element, parent_name: str) -> T:
     for d_type in typing.get_args(field_type):
         try:
-            return _convert(d_type, name, dom.text.strip(), dom, parent_name)
+            return _convert_text(d_type, dom)
         except ValueError:
             pass
-    msg = f"Unable to convert {name} to any of {typing.get_args(field_type)}"
+    msg = f'Unable to convert "{name}"\'s value: "{dom.text.strip()}" to any of ({", ".join(x.__name__ for x in typing.get_args(field_type))})'
     with error_handler(dom, name):
         raise ValueError(msg)
 
@@ -141,7 +158,7 @@ def _handle_xml_text_field(
     sub_type = typing.get_args(field_type)[0]
     if is_union(sub_type):
         return _handle_textfield_union(name, sub_type, dom, parent_name)
-    return _convert(sub_type, name, dom.text.strip(), dom, parent_name)
+    return _convert_text(sub_type, dom)
 
 
 def _handle_list(
@@ -152,27 +169,10 @@ def _handle_list(
 ) -> list[T]:
     # NOTE: Assume that this children can only be of type: XmlClass.
     return [
-        # _get_value(
-        #     name=field_alias,
-        #     field_type=typing.get_args(field_type)[0],
-        #     dom=x,
-        #     parent_name=dom.tag,
-        # )
         # NOTE: Temporary fix.
         typing.get_args(field_type)[0].from_element(x)
         for x in _get_child_from(field_alias, dom)
     ]
-
-
-def _handle_set(
-    field_alias: str,
-    field_type: type[set],
-    dom: ET.Element,
-    parent_name: str,
-) -> set:
-    msg = "Sets are not supported"
-    raise NotImplementedError(msg)
-    return set(_handle_list(field_alias, field_type, dom, parent_name))
 
 
 def _handle_tuple(
@@ -187,7 +187,6 @@ def _handle_tuple(
         msg = f"Tuple expected {len(typing.get_args(field_type))} elements. Found: {len(data)}"
         raise ValueError(msg)
     return tuple(
-        # _get_value(name=field_alias, field_type=d_type,dom=d_data, parent_name=dom.tag)
         # NOTE: Temporary fix.
         d_type.from_element(d_data)
         for d_type, d_data in zip(typing.get_args(field_type), data, strict=True)
@@ -200,71 +199,73 @@ def _get_value(
     dom: ET.Element,
     parent_name: str,
 ) -> T | str | None:
-    match field_type:
-        case _ if is_xml_text_field(field_type):
-            return _handle_xml_text_field(name, field_type, dom, parent_name)
-        case _ if is_list(field_type):
-            return _handle_list(name, field_type, dom, parent_name)
-        case _ if is_set(field_type):
-            return _handle_set(name, field_type, dom, parent_name)
-        case _ if is_tuple(field_type):
-            return _handle_tuple(name, field_type, dom, parent_name)
-        case _ if is_union(field_type):
-            return _handle_union(name, field_type, dom, parent_name)
-        case _:
-            return _convert(field_type, name, dom.attrib.get(name), dom, parent_name)
+    with error_handler(dom, name):
+        match field_type:
+            case _ if is_xml_text_field(field_type):
+                return _handle_xml_text_field(name, field_type, dom, parent_name)
+            case _ if is_xml_class(field_type):
+                return field_type.from_element(
+                    # NOTE: Conflict with list and nested elements.
+                    _get_child_from(name, dom, single=True),
+                )
+            case _ if is_list(field_type):
+                return _handle_list(name, field_type, dom, parent_name)
+            case _ if is_set(field_type):
+                msg = "Sets are not supported"
+                raise NotImplementedError(msg)
+            case _ if is_tuple(field_type):
+                return _handle_tuple(name, field_type, dom, parent_name)
+            case _ if is_union(field_type):
+                return _handle_union(name, field_type, dom, parent_name)
+            case _:
+                return _convert_attribute(field_type, name, dom)
+
+
+def _convert_attribute(
+    field_type: type[T] | None,
+    name: str,
+    dom: ET.Element,
+) -> T | str | None:
+    if name not in dom.attrib and field_type is not None and not is_xml_class(field_type):
+        msg = f'Missing attribute: "{name}"'
+        raise KeyError(msg)
+    return _convert(field_type, dom.attrib.get(name))
+
+
+def _convert_text(
+    field_type: type[T] | None,
+    dom: ET.Element,
+) -> T | str | None:
+    return _convert(field_type, dom.text.strip())
 
 
 def _convert(
     field_type: type[T] | None,
-    field_alias: str,
     data: str | ET.Element | None,
-    dom: ET.Element,
-    parent_name: str,
 ) -> T | str | None:
-    with error_handler(dom, field_alias):
-        match field_type:
-            case builtins.int | builtins.float | builtins.str:
-                return field_type(data)
+    match field_type:
+        case builtins.int | builtins.float | builtins.str | uuid.UUID | pathlib.Path:
+            return field_type(data)
 
-            case builtins.bool:
-                if data.lower() not in bool_true_values + bool_false_values:
-                    msg = f"Boolean value {data} not in {bool_true_values} or {bool_false_values}"
-                    raise ValueError(msg)
-                return data.lower() in bool_true_values
+        case builtins.bool:
+            return _convert_boolean(data)
 
-            case datetime.datetime:
-                return datetime.datetime.fromisoformat(data)
+        case datetime.datetime:
+            return datetime.datetime.fromisoformat(data)
 
-            case uuid.UUID:
-                return uuid.UUID(data)
+        case typing.Any:
+            return data
 
-            case pathlib.Path:
-                # UNSURE: Do this make sense?
-                return pathlib.Path(data)
+        case None:
+            # UNSURE: Should check the data, right?
+            return _handle_none(field_type, data)
 
-            case typing.Any:
-                return data
+        case _ if is_literal(field_type):
+            return _convert_literal(data, field_type)
 
-            case None:
-                # UNSURE: Should check the data, right?
-                return _handle_none(field_alias, field_type, dom, parent_name)
+        case _ if is_enum(field_type):
+            return field_type(data)
 
-            case _ if is_xml_class(field_type):
-                return field_type.from_element(
-                    # NOTE: Conflict with list and nested elements.
-                    _get_child_from(field_alias, dom, single=True),
-                )
-
-            case _ if is_literal(field_type):
-                if data in typing.get_args(field_type):
-                    return data
-                msg = f'Literal value "{data}" not in the defined values: {typing.get_args(field_type)}'
-                raise ValueError(msg)
-
-            case _ if is_enum(field_type):
-                return field_type(data)
-
-            case _:
-                msg = f"Unknown type: {field_type.__name__}"
-                raise ValueError(msg)
+        case _:
+            msg = f"Unknown type: {field_type.__name__}"
+            raise ValueError(msg)
