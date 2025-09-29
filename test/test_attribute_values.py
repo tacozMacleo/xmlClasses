@@ -272,7 +272,7 @@ def test_with_boolean_falses(value: str) -> None:
     assert root.value is False
 
 
-def test_with_literal() -> None:
+def test_with_literal_str() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root value="data" />
@@ -284,6 +284,21 @@ def test_with_literal() -> None:
     root = RootAttribute.from_string(xml_with_attribute.strip())
     assert isinstance(root.value, str)
     assert root.value == "data"
+
+
+def test_with_literal_int() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="1" />
+    """
+
+    class RootAttribute(XmlClass):
+        value: typing.Literal[1]
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, int)
+    assert root.value == 1
+
 
 
 def test_with_enum() -> None:
@@ -350,6 +365,26 @@ def test_optional_attribute() -> None:
     assert isinstance(root.value.data, str)
     assert root.value.data == "data"
     assert root.not_value is None
+
+
+def test_same_name_element_and_attribute() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="2">
+        <value data="data" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value: Value
+        value: int
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value.data, str)
+    assert root.value.data == "data"
 
 
 # def test_decoder_with_base64() -> None:

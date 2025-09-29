@@ -73,6 +73,77 @@ def test_unknown_type() -> None:
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
+def test_union_covert_error() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="kjgs"/>
+    """
+
+    class RootAttribute(XmlClass):
+        value: int | float
+
+    with pytest.raises(
+        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "kjgs" to any of (int, float)')
+    ):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
+def test_text_field_covert_error() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        kjgs
+    </root>
+    """
+
+    class RootAttribute(XmlClass):
+        value: XmlTextField[int | float]
+
+    with pytest.raises(
+        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "kjgs" to any of (int, float)')
+    ):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
+def test_missing_tuple_element() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value>data</value>
+        <extra>data</extra>
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: XmlTextField[str]
+
+    class RootAttribute(XmlClass):
+        value: tuple[Value, Value]
+
+    with pytest.raises(XmlParserError, match=re.escape("Tuple expected 2 elements. Found: 1")):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
+def test_extra_tuple_element() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value>data</value>
+        <value>data</value>
+        <value>data</value>
+        <extra>data</extra>
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: XmlTextField[str]
+
+    class RootAttribute(XmlClass):
+        value: tuple[Value, Value]
+
+    with pytest.raises(XmlParserError, match=re.escape("Tuple expected 2 elements. Found: 3")):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
 
 def test_extra_attribute() -> None:
     xml_with_attribute = """
@@ -87,6 +158,32 @@ def test_extra_attribute() -> None:
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
+def test_missing_attribute_union() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root/>
+    """
+
+    class RootAttribute(XmlClass):
+        value: int | float
+
+    with pytest.raises(
+        XmlParserError, match=re.escape('Missing "value" in "root", with attributes: {} and children: ')
+    ):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
+def test_missing_attribute() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root/>
+    """
+
+    class RootAttribute(XmlClass):
+        value: int
+
+    with pytest.raises(XmlParserError, match=re.escape('Missing attribute: "value"')):
+        RootAttribute.from_string(xml_with_attribute.strip())
 
 
 def test_extra_text_field() -> None:

@@ -301,7 +301,7 @@ def test_with_boolean_falses(value: str) -> None:
     assert root.value is False
 
 
-def test_with_literal() -> None:
+def test_with_literal_str() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
@@ -315,6 +315,22 @@ def test_with_literal() -> None:
     root = RootAttribute.from_string(xml_with_attribute.strip())
     assert isinstance(root.value, str)
     assert root.value == "data"
+
+
+def test_with_literal_int() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        1
+    </root>
+    """
+
+    class RootAttribute(XmlClass):
+        value: XmlTextField[typing.Literal[1]]
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, int)
+    assert root.value == 1
 
 
 def test_with_enum() -> None:

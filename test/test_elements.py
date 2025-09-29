@@ -2,6 +2,7 @@ import pytest
 
 from xmlclasses import XmlClass
 from xmlclasses import XmlTextField
+from xmlclasses import XmlParserError
 # from xmlclasses import field
 
 
@@ -131,7 +132,7 @@ def test_with_element_set() -> None:
     class RootElement(XmlClass):
         value: set[Value]
 
-    with pytest.raises(NotImplementedError, match="Sets are not supported"):
+    with pytest.raises(XmlParserError, match=r"Sets are not supported"):
         RootElement.from_string(xml_with_element.strip())
 
 
