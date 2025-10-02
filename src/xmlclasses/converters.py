@@ -107,10 +107,14 @@ def _convert_boolean(data: str) -> bool:
 
 
 def _convert_literal(data: str, field_type: typing.Literal) -> T:
-    if data not in typing.get_args(field_type):
-        msg = f'Literal value "{data}" not in the defined values: {typing.get_args(field_type)}'
-        raise ValueError(msg)
-    return data
+    for data_type in typing.get_args(field_type):
+        try:
+            if type(data_type)(data) == data_type:
+                return data_type
+        except ValueError:
+            pass
+    msg = f'Literal value "{data}" not in the defined values: {typing.get_args(field_type)}'
+    raise ValueError(msg)
 
 
 def _handle_none(field_type: types.UnionType, data: ET.Element | str | None) -> None:
