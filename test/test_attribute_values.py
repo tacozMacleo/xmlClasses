@@ -74,6 +74,7 @@ def test_with_float() -> None:
 #     assert isinstance(root.data, float)
 #     assert root.data == 42.22
 
+
 # UNSURE: Do this even make sense?
 def test_with_none() -> None:
     xml_with_none = """
@@ -86,6 +87,7 @@ def test_with_none() -> None:
 
     root = RootString.from_string(xml_with_none.strip())
     assert root.data is None
+
 
 def test_with_uuid() -> None:
     uuid_value = uuid.uuid4()
@@ -298,7 +300,6 @@ def test_with_literal_int() -> None:
     root = RootAttribute.from_string(xml_with_attribute.strip())
     assert isinstance(root.value, int)
     assert root.value == 1
-
 
 
 def test_with_enum() -> None:

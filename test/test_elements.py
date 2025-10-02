@@ -127,6 +127,7 @@ def test_no_xml_tag() -> None:
     root = RootElement.from_string(xml_with_element.strip())
     assert root.value is None
 
+
 def test_with_element_set() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>

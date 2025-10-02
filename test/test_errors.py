@@ -245,7 +245,7 @@ def test_nested_deep_element_error() -> None:
     with pytest.raises(
         XmlParserError,
         match=re.escape(
-    """Error in "value" while parsing tag: "root".
+            """Error in "value" while parsing tag: "root".
 Error in "subValue" while parsing tag: "value".
 Error in "subsubValue" while parsing tag: "subValue".
 Error in "value_subsubValue" while parsing tag: "subsubValue".

@@ -16,3 +16,5 @@ test.log
 
 # Others
 .mypy_cache
+.pytest_cache
+.ruff_cache

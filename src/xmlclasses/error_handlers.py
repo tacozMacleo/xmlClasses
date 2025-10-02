@@ -32,4 +32,3 @@ def error_handler(data: ET.Element, name: str) -> typing.Generator[None, None, N
         error_msg = f'Error in "{name}" while parsing tag: "{data.tag}", with attributes: {data.attrib}\n'
         error_msg += str(e)
         raise XmlParserError(error_msg) from e
-
