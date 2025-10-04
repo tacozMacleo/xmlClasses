@@ -167,6 +167,101 @@ def test_optional_element() -> None:
     assert root.not_value is None
 
 
+def test_element_name_padding() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value data="data" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_: Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_.data, str)
+    assert root.value_.data == "data"
+
+
+def test_element_name_padding_list() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value data="first" />
+        <value data="second" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_: list[Value]
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_, list)
+    assert root.value_[0].data == "first"
+    assert root.value_[1].data == "second"
+
+
+def test_element_name_padding_union() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value data="first" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_: Value | list[Value]
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_, Value)
+    assert root.value_.data == "first"
+
+
+def test_element_name_padding_union_none() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value data="first" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_: None | Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_, Value)
+    assert root.value_.data == "first"
+
+
+def test_element_name_padding_union_none_empty() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_: None | Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert root.value_ is None
+
+
+
 # def test_decoder_with_base64() -> None:
 #     data = "42.22"
 #     xml_with_base64 = f"""

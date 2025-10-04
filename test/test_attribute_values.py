@@ -368,24 +368,21 @@ def test_optional_attribute() -> None:
     assert root.not_value is None
 
 
-def test_same_name_element_and_attribute() -> None:
-    xml_with_element = """
+def test_attribute_name_padding() -> None:
+    int_value = 2
+    xml_with_element = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="2">
+    <root value="{int_value}">
         <value data="data" />
     </root>
     """
 
-    class Value(XmlClass):
-        data: str
-
     class RootElement(XmlClass):
-        value: Value
-        value: int
+        value_: int
 
     root = RootElement.from_string(xml_with_element.strip())
-    assert isinstance(root.value.data, str)
-    assert root.value.data == "data"
+    assert isinstance(root.value_, int)
+    assert root.value_ == int_value
 
 
 # def test_decoder_with_base64() -> None:

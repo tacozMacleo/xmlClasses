@@ -12,6 +12,7 @@ from .base_types import XmlTextField
 from .error_handlers import error_handler
 
 from .xml_elementTree_utils import _get_child_from
+from .xml_elementTree_utils import _get_value_with_fallback
 
 
 @typing.dataclass_transform()
@@ -123,9 +124,9 @@ def _handle_none(field_type: types.UnionType, data: ET.Element | str | None) -> 
 
 def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, parent_name: str) -> T:
     # TODO: Refactor this.
-    # NOTE: dom is also be a data type.
-    child_tags = {x.tag for x in dom}
-    if name not in dom.keys() and name not in child_tags and not is_xml_text_field(field_type):
+    # NOTE: dom can also be a data type.
+    child_tags = {x.tag for x in dom} | {x.tag + "_" for x in dom}
+    if name not in dom.keys() and name.rstrip("_") not in dom.keys() and name not in child_tags and not is_xml_text_field(field_type):
         if types.NoneType not in typing.get_args(field_type):
             msg = f'Missing "{name}" in "{dom.tag}", with attributes: {dom.attrib} and children: {child_tags}'
             raise ValueError(msg)
@@ -133,7 +134,7 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
 
     for d_type in typing.get_args(field_type):
         try:
-            return _convert_attribute(d_type, name, dom)
+            return _get_value(name, d_type, dom, parent_name)
         except ValueError:
             pass
     msg = f'Unable to convert "{name}"\'s value: "{dom.attrib[name]}" to any of ({", ".join(x.__name__ for x in typing.get_args(field_type))})'
@@ -209,7 +210,6 @@ def _get_value(
                 return _handle_xml_text_field(name, field_type, dom, parent_name)
             case _ if is_xml_class(field_type):
                 return field_type.from_element(
-                    # NOTE: Conflict with list and nested elements.
                     _get_child_from(name, dom, single=True),
                 )
             case _ if is_list(field_type):
@@ -230,10 +230,11 @@ def _convert_attribute(
     name: str,
     dom: ET.Element,
 ) -> T | str | None:
-    if name not in dom.attrib and field_type is not None and not is_xml_class(field_type):
+    value = _get_value_with_fallback(dom, name)
+    if value is None and field_type is not None:
         msg = f'Missing attribute: "{name}"'
         raise KeyError(msg)
-    return _convert(field_type, dom.attrib.get(name))
+    return _convert(field_type, value)
 
 
 def _convert_text(
