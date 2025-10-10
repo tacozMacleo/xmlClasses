@@ -195,7 +195,7 @@ def test_extra_text_field() -> None:
     class RootAttribute(XmlClass):
         value: str
 
-    with pytest.raises(XmlParserError, match=re.escape("Extra text field: data")):
+    with pytest.raises(XmlParserError, match=re.escape("Unexpected text field: data")):
         RootAttribute.from_string(xml_with_attribute.strip())
 
 

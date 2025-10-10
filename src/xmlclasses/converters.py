@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 
 from .base_types import XmlBaseType
 from .base_types import XmlTextField
-from .error_handlers import error_handler
+from .error_handlers import XmlParserError, error_handler
 
 from .xml_elementTree_utils import _get_child_from
 from .xml_elementTree_utils import _get_value_with_fallback
@@ -53,12 +53,23 @@ class XmlClass:
         for key, field in cls.__annotations__.items():
             arguments[key] = _get_value(key, field, dom, cls.__name__)
 
+        if text_data := unexpected_text_field(dom, cls):
+            msg = f"Unexpected text field: {text_data}"
+            raise XmlParserError(msg)
+
         return cls(**arguments)
 
     @classmethod
     def from_string(cls, string: str) -> typing.Self:
         dom = ET.fromstring(string.strip())  # NOTE: Is unsecure, but do not want to import defusedxml
         return cls.from_element(dom)
+
+
+def unexpected_text_field(dom: ET.Element, cls: type) -> str:
+    expecting_text_field = any(filter(lambda x: is_xml_text_field(x), cls.__annotations__.values()))
+    if not expecting_text_field and dom.text is not None:
+        return dom.text.strip()
+    return ""
 
 
 def is_xml_text_field(obj: type) -> typing.TypeGuard[type[XmlTextField]]:
@@ -126,7 +137,12 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
     # TODO: Refactor this.
     # NOTE: dom can also be a data type.
     child_tags = {x.tag for x in dom} | {x.tag + "_" for x in dom}
-    if name not in dom.keys() and name.rstrip("_") not in dom.keys() and name not in child_tags and not is_xml_text_field(field_type):
+    if (
+        name not in dom.keys()
+        and name.rstrip("_") not in dom.keys()
+        and name not in child_tags
+        and not is_xml_text_field(field_type)
+    ):
         if types.NoneType not in typing.get_args(field_type):
             msg = f'Missing "{name}" in "{dom.tag}", with attributes: {dom.attrib} and children: {child_tags}'
             raise ValueError(msg)
