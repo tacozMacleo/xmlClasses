@@ -57,6 +57,10 @@ class XmlClass:
             msg = f"Unexpected text field: {text_data}"
             raise XmlParserError(msg)
 
+        if extra_attributes := unexpected_attributes(dom, cls):
+            msg = f"Unexpected attribute(s): {extra_attributes}"
+            raise XmlParserError(msg)
+
         return cls(**arguments)
 
     @classmethod
@@ -70,6 +74,15 @@ def unexpected_text_field(dom: ET.Element, cls: type) -> str:
     if not expecting_text_field and dom.text is not None:
         return dom.text.strip()
     return ""
+
+
+def unexpected_attributes(dom: ET.Element, cls: type) -> list[str]:
+    cls_annotations = [x.rstrip("_") for x in cls.__annotations__ if not is_xml_class(cls.__annotations__.get(x))]
+    return [
+        x
+        for x in dom.attrib
+        if x not in cls_annotations
+    ]
 
 
 def is_xml_text_field(obj: type) -> typing.TypeGuard[type[XmlTextField]]:

@@ -154,7 +154,27 @@ def test_extra_attribute() -> None:
     class RootAttribute(XmlClass):
         value: str
 
-    with pytest.raises(XmlParserError, match=re.escape("Extra attribute: extra")):
+    with pytest.raises(XmlParserError, match=re.escape("Unexpected attribute(s): ['extra']")):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
+def test_extra_attribute_with_element() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="kjgs" extra="kjgs" >
+        <extra data="kjgs"/>
+    </root>
+    """
+
+    class Extra(XmlClass):
+        data: str
+        
+
+    class RootAttribute(XmlClass):
+        value: str
+        extra: Extra
+
+    with pytest.raises(XmlParserError, match=re.escape("Unexpected attribute(s): ['extra']")):
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
