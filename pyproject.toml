@@ -1,6 +1,6 @@
 [project]
 name = "xmlclasses"
-version = "0.1.0"
+version = "0.1.1"
 description = "Simple, fast, lightweight xml parser and validator defined by classes."
 readme = "README.md"
 authors = [
@@ -135,7 +135,7 @@ basicTest = {cmd = "pytest -v {testbasic}", help = "Run the basic tests for curr
 
 ############################## Bump My Version #############################
 [tool.bumpversion]
-current_version = "0.1.0"
+current_version = "0.1.1"
 tag = true
 commit = true
 message = "Bump version: {current_version} → {new_version}"
