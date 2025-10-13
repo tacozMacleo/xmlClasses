@@ -61,6 +61,10 @@ class XmlClass:
             msg = f"Unexpected attribute(s): {extra_attributes}"
             raise XmlParserError(msg)
 
+        if extra_children := unexpected_children(dom, cls):
+            msg = f"Unexpected child(ren): {extra_children}"
+            raise XmlParserError(msg)
+
         return cls(**arguments)
 
     @classmethod
@@ -84,6 +88,20 @@ def unexpected_attributes(dom: ET.Element, cls: type) -> list[str]:
         if x not in cls_annotations
     ]
 
+def unexpected_children(dom: ET.Element, cls: type) -> list[str]:
+    cls_annotations = [
+        x.rstrip("_")
+        for x in cls.__annotations__
+        if is_xml_class(cls.__annotations__.get(x))
+        or is_union_contains_xml_class(cls.__annotations__.get(x))
+        or is_list(cls.__annotations__.get(x))
+        or is_tuple(cls.__annotations__.get(x))  # TODO: Also check sub_annotations.
+    ]
+    return [
+        x.tag
+        for x in dom
+        if x.tag.rstrip("_") not in cls_annotations
+    ]
 
 def is_xml_text_field(obj: type) -> typing.TypeGuard[type[XmlTextField]]:
     return typing.get_origin(obj) is XmlTextField
@@ -103,6 +121,9 @@ def is_set(obj: type) -> typing.TypeGuard[type[set]]:
 
 def is_union(obj: type) -> typing.TypeGuard[type[types.UnionType]]:
     return isinstance(obj, types.UnionType)
+
+def is_union_contains_xml_class(obj: type) -> typing.TypeGuard[type[types.UnionType]]:
+    return is_union(obj) and any(map(is_xml_class, typing.get_args(obj)))
 
 
 def is_xml_class(obj: type) -> typing.TypeGuard[type[XmlClass]]:

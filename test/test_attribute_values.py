@@ -373,7 +373,6 @@ def test_attribute_name_padding() -> None:
     xml_with_element = f"""
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root value="{int_value}">
-        <value data="data" />
     </root>
     """
 
