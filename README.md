@@ -93,21 +93,20 @@ Supported Annotations type:
     Since multiple attributes are not allowed, and a data separator
     is not defined.
 [^2]: Is parsed by the `datetime.datetime.fromisoformat` method.
-[^3]: Is parsed as is. Only check if there is data. 
+[^3]: Is parsed as is (as string). Only check if there is data. 
 [^4]: Where ["true", "1", "yes", "on"] is true and ["false", "0", "no", "off"] is false.
 
 NOTE:
 ===================================================================
- * This is a work in progress
+ * This is a work in progress, ATM it only parses the XML data, to a python class.
  * UNSURE: Do None type hint as the only one even make sense?
 
 
 TODO:
 ===================================================================
- * [x] Merge the class wrapper and inheritance together.
- * [ ] Make a test for typing.Any.
+ * [x] Make a test for typing.Any.
  * [ ] Added `defusedxml` as dependency. (Security reasons)
- * [ ] Fix ALL type hints...
+ * [x] Fix ALL type hints...
  * [ ] Add support for decoder and encoder.
  * [ ] Add support for custom parsers. (XmlDataParser[MyParserOfData])
- * [ ] Make good and useful error messages.
+ * [x] Make good and useful error messages.

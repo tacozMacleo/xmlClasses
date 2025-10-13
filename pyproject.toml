@@ -128,11 +128,9 @@ use_vars = true
 
 [tool.taskipy.variables]
 testbasic = "test/test_attribute_values.py test/test_elements.py test/test_text_field_values.py"
-testerrors = "test/test_errors.py::test_extra_attribute test/test_errors.py::test_extra_text_field test/test_errors.py::test_extra_element"
 
 [tool.taskipy.tasks]
 basicTest = {cmd = "pytest -v {testbasic}", help = "Run the basic tests for current development."}
-errorTests = {cmd = "pytest -v {testerrors}", help = "Run the error tests for current development."}
 
 
 ############################## Bump My Version #############################
