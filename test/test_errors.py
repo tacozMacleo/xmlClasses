@@ -38,6 +38,19 @@ def test_with_literal() -> None:
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
+def test_with_literal_different_type() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="notData" />
+    """
+
+    class RootAttribute(XmlClass):
+        value: Literal[111]
+
+    with pytest.raises(XmlParserError, match=r"Literal value \"notData\" not in the defined values: \(111,\)"):
+        RootAttribute.from_string(xml_with_attribute.strip())
+
+
 def test_fail_on_data_flatting_element() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -234,7 +247,7 @@ def test_extra_element() -> None:
     class RootAttribute(XmlClass):
         value: Value
 
-    with pytest.raises(XmlParserError, match=re.escape("Extra element: extra")):
+    with pytest.raises(XmlParserError, match=re.escape("Unexpected child(ren): ['extra']")):
         RootAttribute.from_string(xml_with_attribute.strip())
 
 
