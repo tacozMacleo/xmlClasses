@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import xml.etree.ElementTree as ET
 
 
 class XmlBaseType(dataclasses.Field):

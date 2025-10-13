@@ -18,7 +18,7 @@ test_data = """<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 </PutDataRequest>"""
 
 
-xml_country ="""
+xml_country = """
 <?xml version="1.0"?>
 <data>
     <country name="Liechtenstein">
