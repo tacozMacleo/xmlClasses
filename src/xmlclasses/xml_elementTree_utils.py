@@ -15,10 +15,10 @@ def _get_child_from(tag: str, dom: ET.Element, *, single: bool = False) -> list[
 
     """
     if not single:
-        return [x for x in dom if x.tag == tag or x.tag == tag.rstrip("_")]
+        return [x for x in dom if x.tag == tag or x.tag == tag.rstrip("_") or x.tag == tag.replace("_", "-")]
 
     for child in dom:
-        if child.tag == tag or child.tag == tag.rstrip("_"):
+        if child.tag == tag or child.tag == tag.rstrip("_") or child.tag == tag.replace("_", "-"):
             return child
     msg = f'Could not find "{tag}" in "{dom.tag}"'
     raise ValueError(msg)
@@ -38,4 +38,6 @@ def _get_value_with_fallback(dom: ET.Element, name: str) -> str | None:
     """
     if name in dom.attrib:
         return dom.attrib[name]
+    if name.replace("_", "-") in dom.attrib:
+        return dom.attrib[name.replace("_", "-")]
     return dom.attrib.get(name.rstrip("_"))

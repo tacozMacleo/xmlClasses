@@ -1,6 +1,6 @@
 [project]
 name = "xmlclasses"
-version = "0.1.1"
+version = "0.2.0"
 description = "Simple, fast, lightweight xml parser and validator defined by classes."
 readme = "README.md"
 authors = [
@@ -23,12 +23,19 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.urls]
+repository = "https://github.com/tacozMacleo/xmlClasses"
+"Bug Tracker" = "https://github.com/tacozMacleo/xmlClasses/issues"
+# homepage = "https://xmlClasses.org/"
+# documentation = ""
+
 ################################### Ruff ###################################
 
 [tool.ruff]
 line-length = 120
 lint.select = ["ALL"]
 lint.ignore = [
+    "SIM118",  # False positive when we work with xml.etree.ElementTree.
     "TC006",
     "TRY003",
     "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
@@ -135,7 +142,7 @@ basicTest = {cmd = "pytest -v {testbasic}", help = "Run the basic tests for curr
 
 ############################## Bump My Version #############################
 [tool.bumpversion]
-current_version = "0.1.1"
+current_version = "0.2.0"
 tag = true
 commit = true
 message = "Bump version: {current_version} → {new_version}"

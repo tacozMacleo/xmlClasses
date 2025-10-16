@@ -5,7 +5,7 @@ from .converters import XmlClass
 from .error_handlers import XmlParserError
 from .utils import field
 
-__version__ = "v0.1.1"
+__version__ = "v0.2.0"
 
 __all__ = [
     "XmlAttributeField",

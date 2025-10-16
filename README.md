@@ -96,14 +96,37 @@ Supported Annotations type:
 [^3]: Is parsed as is (as string). Only check if there is data. 
 [^4]: Where ["true", "1", "yes", "on"] is true and ["false", "0", "no", "off"] is false.
 
+
+Other Info:
+-------------------------------------------------------------------
+
+### Trailing underscore
+Trailing underscore is ignored when mapping from XML to python class.
+It is used in the casses where a child element tag and a attribute 
+have the same name. Through not a requirement, the trailing underscore
+should be used in the attribute name.
+
+### Dash in tag or Attribute names
+Since dash in python name is not allowed, dash in tag or attribute name
+is replaced with underscore.
+
+
+
 NOTE:
 ===================================================================
  * This is a work in progress, ATM it only parses the XML data, to a python class.
  * UNSURE: Do None type hint as the only one even make sense?
+ * UNSURE: Should null value be None type hint, and something else for optional?
 
+Tests TODO:
+===================================================================
+ * [ ] Test `XmlClass | None` case, where there is parsing error in XmlClass.
+ * [ ] Test `OneTwo: typing.Literal["firstPasser", "secondPasser"] | None` case, where it do not Exist.
+ * [ ] Test `xmlClass | AnotherXmlClass` case, with different Names.
 
 TODO:
 ===================================================================
+ * [ ] Make the error messages better for when there is a error deep inside a xmlClass.
  * [x] Make a test for typing.Any.
  * [ ] Added `defusedxml` as dependency. (Security reasons)
  * [x] Fix ALL type hints...
