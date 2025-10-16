@@ -1,4 +1,3 @@
-import base64
 import datetime
 import enum
 import pathlib
@@ -8,7 +7,6 @@ import uuid
 import pytest
 
 from xmlclasses import XmlClass
-# from xmlclasses import field
 
 
 def test_with_string() -> None:
@@ -58,28 +56,10 @@ def test_with_float() -> None:
     assert root.data == float_value
 
 
-# def test_with_bytes() -> None:
-#     xml_with_base64 = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         "443"
-#     </root>
-#     """
-
-#     @dataclass
-#     class RootString(XmlBaseClass):
-#         data: bytes = field(text=True)
-
-#     root = RootString.from_string(xml_with_base64.strip())
-#     assert isinstance(root.data, float)
-#     assert root.data == 42.22
-
-
-# UNSURE: Do this even make sense?
-def test_with_none() -> None:
+def test_with_null() -> None:
     xml_with_none = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root data=NULL/>
+    <root data="null"/>
     """
 
     class RootString(XmlClass):
@@ -88,6 +68,18 @@ def test_with_none() -> None:
     root = RootString.from_string(xml_with_none.strip())
     assert root.data is None
 
+
+def test_with_none() -> None:
+    xml_with_none = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    class RootString(XmlClass):
+        data: None
+
+    root = RootString.from_string(xml_with_none.strip())
+    assert root.data is None
 
 def test_with_uuid() -> None:
     uuid_value = uuid.uuid4()
@@ -164,20 +156,6 @@ def test_datetime(value: str) -> None:
     assert root.data == datetime.datetime.fromisoformat(value)
 
 
-# UNSURE: Do this even make sense?
-def test_with_none() -> None:
-    xml_with_none = """
-    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root />
-    """
-
-    class RootString(XmlClass):
-        data: None
-
-    root = RootString.from_string(xml_with_none.strip())
-    assert root.data is None
-
-
 def test_nested_element() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -202,40 +180,6 @@ def test_nested_element() -> None:
     assert isinstance(root.value.data, Data)
     assert isinstance(root.value, Value)
     assert root.value.data.data == "data"
-
-
-# def test_with_attribute_alias() -> None:
-#     xml_with_attribute = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root value="data" />
-#     """
-
-#     class RootAttribute(XmlClass):
-#         new_name: str = field(alias="value")
-
-#     root = RootAttribute.from_string(xml_with_attribute.strip())
-#     assert isinstance(root.new_name, str)
-#     assert root.new_name == "data"
-
-
-# def test_with_element_alias() -> None:
-#     xml_with_element = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         <value>data</value>
-#     </root>
-#     """
-
-#     class Value(XmlClass):
-#         data: XmlTextField[str]
-
-#     class RootElement(XmlClass):
-#         nested: Value
-
-#     root = RootElement.from_string(xml_with_element.strip())
-#     assert isinstance(root.nested.data, str)
-#     assert isinstance(root.nested, Value)
-#     assert root.nested.data == "data"
 
 
 @pytest.mark.parametrize(
@@ -384,18 +328,17 @@ def test_attribute_name_padding() -> None:
     assert root.value_ == int_value
 
 
-# def test_decoder_with_base64() -> None:
-#     data = "42.22"
-#     xml_with_base64 = f"""
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         {base64.b64encode(data.encode()).decode()}
-#     </root>
-#     """
+def test_attribute_dash_name() -> None:
+    int_value = 2
+    xml_with_element = f"""
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value-with-dash="{int_value}">
+    </root>
+    """
 
-#     class RootString(XmlClass):
-#         data: XmlTextField[base64.b64decode]
+    class RootElement(XmlClass):
+        value_with_dash: int
 
-#     root = RootString.from_string(xml_with_base64.strip())
-#     assert isinstance(root.data, bytes)
-#     assert root.data.decode() == data
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_with_dash, int)
+    assert root.value_with_dash == int_value

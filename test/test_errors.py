@@ -10,7 +10,7 @@ from xmlclasses import XmlTextField
 def test_with_boolean() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="kjgs" />
+    <root value="some_value" />
     """
 
     class RootAttribute(XmlClass):
@@ -19,7 +19,8 @@ def test_with_boolean() -> None:
     with pytest.raises(
         XmlParserError,
         match=re.escape(
-            "Error in \"value\" while parsing element: \"root\", with attributes: {'value': 'kjgs'}\nBoolean value kjgs not in ['true', '1', 'yes', 'on'] or ['false', '0', 'no', 'off']"
+            "Error in \"value\" while parsing element: \"root\", with attributes: {'value': 'some_value'}\n"
+            "Boolean value some_value not in ['true', '1', 'yes', 'on'] or ['false', '0', 'no', 'off']",
         ),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())
@@ -76,7 +77,7 @@ def test_fail_on_data_flatting_element() -> None:
 def test_unknown_type() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="kjgs" />
+    <root value="some_value" />
     """
 
     class RootAttribute(XmlClass):
@@ -89,14 +90,14 @@ def test_unknown_type() -> None:
 def test_union_covert_error() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="kjgs"/>
+    <root value="some_value"/>
     """
 
     class RootAttribute(XmlClass):
         value: int | float
 
     with pytest.raises(
-        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "kjgs" to any of (int, float)')
+        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "some_value" to any of (int, float)'),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())
 
@@ -105,7 +106,7 @@ def test_text_field_covert_error() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
-        kjgs
+        some_value
     </root>
     """
 
@@ -113,7 +114,7 @@ def test_text_field_covert_error() -> None:
         value: XmlTextField[int | float]
 
     with pytest.raises(
-        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "kjgs" to any of (int, float)')
+        XmlParserError, match=re.escape('Unable to convert "value"\'s value: "some_value" to any of (int, float)'),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())
 
@@ -161,7 +162,7 @@ def test_extra_tuple_element() -> None:
 def test_extra_attribute() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="kjgs" extra="kjgs" />
+    <root value="your_value" extra="your_value" />
     """
 
     class RootAttribute(XmlClass):
@@ -174,14 +175,13 @@ def test_extra_attribute() -> None:
 def test_extra_attribute_with_element() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <root value="kjgs" extra="kjgs" >
-        <extra data="kjgs"/>
+    <root value="your_value" extra="your_value" >
+        <extra data="your_value"/>
     </root>
     """
 
     class Extra(XmlClass):
         data: str
-        
 
     class RootAttribute(XmlClass):
         value: str
@@ -201,7 +201,7 @@ def test_missing_attribute_union() -> None:
         value: int | float
 
     with pytest.raises(
-        XmlParserError, match=re.escape('Missing "value" in "root", with attributes: {} and children: ')
+        XmlParserError, match=re.escape('Missing "value" in "root", with attributes: {} and children: '),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())
 
@@ -256,21 +256,21 @@ def test_nested_deep_element_error() -> None:
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
         <value>
-            <subValue>
-                <subsubValue>data</subsubValue>
-            </subValue>
+            <sub_value>
+                <sub_sub_value>data</sub_sub_value>
+            </sub_value>
         </value>
     </root>
     """
 
     class SubSubValue(XmlClass):
-        value_subsubValue: XmlTextField[int | float]
+        value_sub_sub_value: XmlTextField[int | float]
 
     class SubValue(XmlClass):
-        subsubValue: SubSubValue
+        sub_sub_value: SubSubValue
 
     class Value(XmlClass):
-        subValue: SubValue
+        sub_value: SubValue
 
     class RootAttribute(XmlClass):
         value: Value
@@ -279,11 +279,11 @@ def test_nested_deep_element_error() -> None:
         XmlParserError,
         match=re.escape(
             """Error in "value" while parsing element: "root".
-Error in "subValue" while parsing element: "value".
-Error in "subsubValue" while parsing element: "subValue".
-Error in "value_subsubValue" while parsing element: "subsubValue".
-Error in "value_subsubValue" while parsing element: "subsubValue", with attributes: {}
-Unable to convert "value_subsubValue"'s value: "data" to any of (int, float)""",
+Error in "sub_value" while parsing element: "value".
+Error in "sub_sub_value" while parsing element: "sub_value".
+Error in "value_sub_sub_value" while parsing element: "sub_sub_value".
+Error in "value_sub_sub_value" while parsing element: "sub_sub_value", with attributes: {}
+Unable to convert "value_sub_sub_value"'s value: "data" to any of (int, float)""",
         ),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())

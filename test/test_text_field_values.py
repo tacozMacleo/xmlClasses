@@ -1,4 +1,3 @@
-import base64
 import datetime
 import enum
 import pathlib
@@ -9,7 +8,6 @@ import pytest
 
 from xmlclasses import XmlClass
 from xmlclasses import XmlTextField
-# from xmlclasses import field
 
 
 def test_with_string() -> None:
@@ -86,23 +84,6 @@ let message = (login == 'Employee') ? 'Hello' :
         "  (login == '') ? 'No login' :\n"
         "  '';"
     )
-
-
-# def test_with_bytes() -> None:
-#     xml_with_base64 = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         "443"
-#     </root>
-#     """
-
-#     @dataclass
-#     class RootString(XmlBaseClass):
-#         data: bytes = field(text=True)
-
-#     root = RootString.from_string(xml_with_base64.strip())
-#     assert isinstance(root.data, float)
-#     assert root.data == 42.22
 
 
 def test_with_uuid() -> None:
@@ -225,40 +206,6 @@ def test_nested_element() -> None:
     assert isinstance(root.value.data, Data)
     assert isinstance(root.value, Value)
     assert root.value.data.data == "data"
-
-
-# def test_with_attribute_alias() -> None:
-#     xml_with_attribute = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root value="data" />
-#     """
-
-#     class RootAttribute(XmlClass):
-#         new_name: str = field(alias="value")
-
-#     root = RootAttribute.from_string(xml_with_attribute.strip())
-#     assert isinstance(root.new_name, str)
-#     assert root.new_name == "data"
-
-
-# def test_with_element_alias() -> None:
-#     xml_with_element = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         <value>data</value>
-#     </root>
-#     """
-
-#     class Value(XmlClass):
-#         data: XmlTextField[str]
-
-#     class RootElement(XmlClass):
-#         nested: Value
-
-#     root = RootElement.from_string(xml_with_element.strip())
-#     assert isinstance(root.nested.data, str)
-#     assert isinstance(root.nested, Value)
-#     assert root.nested.data == "data"
 
 
 @pytest.mark.parametrize(
@@ -398,20 +345,3 @@ def test_optional_field() -> None:
 
     root = RootElement.from_string(xml_with_element.strip())
     assert root.value.data is None
-
-
-# def test_decoder_with_base64() -> None:
-#     data = "42.22"
-#     xml_with_base64 = f"""
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         {base64.b64encode(data.encode()).decode()}
-#     </root>
-#     """
-
-#     class RootString(XmlClass):
-#         data: XmlTextField[base64.b64decode]
-
-#     root = RootString.from_string(xml_with_base64.strip())
-#     assert isinstance(root.data, bytes)
-#     assert root.data.decode() == data

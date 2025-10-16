@@ -116,6 +116,7 @@ NOTE:
 ===================================================================
  * This is a work in progress, ATM it only parses the XML data, to a python class.
  * UNSURE: Do None type hint as the only one even make sense?
+ * UNSURE: Should null value be None type hint, and something else for optional?
 
 Tests TODO:
 ===================================================================

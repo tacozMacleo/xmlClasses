@@ -3,7 +3,6 @@ import pytest
 from xmlclasses import XmlClass
 from xmlclasses import XmlTextField
 from xmlclasses import XmlParserError
-# from xmlclasses import field
 
 
 def test_nested_element() -> None:
@@ -50,26 +49,6 @@ def test_with_element() -> None:
     assert isinstance(root.value.data, str)
     assert isinstance(root.value, Value)
     assert root.value.data == "data"
-
-
-# def test_with_element_alias() -> None:
-#     xml_with_element = """
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         <value>data</value>
-#     </root>
-#     """
-
-#     class Value(XmlClass):
-#         data: XmlTextField[str]
-
-#     class RootElement(XmlClass):
-#         nested: Value
-
-#     root = RootElement.from_string(xml_with_element.strip())
-#     assert isinstance(root.nested.data, str)
-#     assert isinstance(root.nested, Value)
-#     assert root.nested.data == "data"
 
 
 def test_with_element_list() -> None:
@@ -261,19 +240,20 @@ def test_element_name_padding_union_none_empty() -> None:
     assert root.value_ is None
 
 
+def test_element_name_padding_union_none_with_dash() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value-with-dash data="first" />
+    </root>
+    """
 
-# def test_decoder_with_base64() -> None:
-#     data = "42.22"
-#     xml_with_base64 = f"""
-#     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-#     <root>
-#         {base64.b64encode(data.encode()).decode()}
-#     </root>
-#     """
+    class Value(XmlClass):
+        data: str
 
-#     class RootString(XmlClass):
-#         data: XmlTextField[base64.b64decode]
+    class RootElement(XmlClass):
+        value_with_dash: None | Value
 
-#     root = RootString.from_string(xml_with_base64.strip())
-#     assert isinstance(root.data, bytes)
-#     assert root.data.decode() == data
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_with_dash, Value)
+    assert root.value_with_dash.data == "first"
