@@ -82,30 +82,22 @@ def unexpected_text_field(dom: ET.Element, cls: type) -> str:
 
 def unexpected_attributes(dom: ET.Element, cls: type) -> list[str]:
     cls_annotations = [
-        x.rstrip("_").replace("_", "-")
-        for x in cls.__annotations__
-        if not is_xml_class(cls.__annotations__.get(x))
+        x.rstrip("_").replace("_", "-") for x in cls.__annotations__ if not is_xml_class(cls.__annotations__.get(x))
     ]
-    return [
-        x
-        for x in dom.attrib
-        if x not in cls_annotations
-    ]
+    return [x for x in dom.attrib if x not in cls_annotations]
+
 
 def unexpected_children(dom: ET.Element, cls: type) -> list[str]:
     cls_annotations = [
-        x.rstrip("_")
+        x.rstrip("_").replace("_", "-")
         for x in cls.__annotations__
         if is_xml_class(cls.__annotations__.get(x))
         or is_union_contains_xml_class(cls.__annotations__.get(x))
         or is_list(cls.__annotations__.get(x))
         or is_tuple(cls.__annotations__.get(x))  # TODO: Also check sub_annotations.
     ]
-    return list({
-        x.tag
-        for x in dom
-        if x.tag.rstrip("_") not in cls_annotations
-    })
+    return list({x.tag for x in dom if x.tag.rstrip("_") not in cls_annotations})
+
 
 def is_xml_text_field(obj: type) -> typing.TypeGuard[type[XmlTextField]]:
     return typing.get_origin(obj) is XmlTextField
@@ -125,6 +117,7 @@ def is_set(obj: type) -> typing.TypeGuard[type[set]]:
 
 def is_union(obj: type) -> typing.TypeGuard[type[types.UnionType]]:
     return isinstance(obj, types.UnionType)
+
 
 def is_union_contains_xml_class(obj: type) -> typing.TypeGuard[type[types.UnionType]]:
     return is_union(obj) and any(map(is_xml_class, typing.get_args(obj)))
@@ -168,16 +161,17 @@ def _convert_literal(data: str, field_type: typing.Literal) -> T:
 
 
 def _handle_none(field_type: types.UnionType, data: ET.Element | str | None) -> None:
+    # UNSURE: Should check the data, right?
     return None
 
 
 def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, parent_name: str) -> T:
     # TODO: Refactor this.
     # NOTE: dom can also be a data type.
-    child_tags = {x.tag for x in dom} | {x.tag + "_" for x in dom}
+    child_tags = {x.tag for x in dom} | {x.tag + "_" for x in dom} | {x.tag.replace("-", "_") for x in dom}
     if (
         name not in dom.keys()
-        and name.rstrip("_").replace("_", "-") not in dom.keys()
+        and name not in dom.keys()
         and name not in child_tags
         and not is_xml_text_field(field_type)
     ):
@@ -188,7 +182,8 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
 
     for d_type in typing.get_args(field_type):
         try:
-            # TODO(MBK): If d_type is a XmlClass, and Element is present, use it, and those errors.:
+            # TODO(MBK): If d_type is a XmlClass, and Element is present, it should not ignore the ValueError and try it as a attribute.
+            # UNSURE: How do I make a test for this?
             return _get_value(name, d_type, dom, parent_name)
         except ValueError as e:
             # print(f"{d_type=}", e)
@@ -215,7 +210,7 @@ def _handle_xml_text_field(
     dom: ET.Element,
     parent_name: str,
 ) -> T:
-    # NOTE: Assume that is can only be Union or "normal" data types.
+    # NOTE: Assume that it can only be Union or "normal" data types.
     sub_type = typing.get_args(field_type)[0]
     if is_union(sub_type):
         return _handle_textfield_union(name, sub_type, dom, parent_name)
@@ -242,7 +237,7 @@ def _handle_tuple(
     dom: ET.Element,
     parent_name: str,
 ) -> tuple:
-    # NOTE: Assume that this children can only be of type: XmlClass.
+    # NOTE: Assume that these children can only be of type: XmlClass.
     data = list(_get_child_from(field_alias, dom))
     if len(typing.get_args(field_type)) != len(data):
         msg = f"Tuple expected {len(typing.get_args(field_type))} elements. Found: {len(data)}"
@@ -318,7 +313,6 @@ def _convert(
             return data
 
         case None:
-            # UNSURE: Should check the data, right?
             return _handle_none(field_type, data)
 
         case _ if is_literal(field_type):

@@ -240,7 +240,26 @@ def test_element_name_padding_union_none_empty() -> None:
     assert root.value_ is None
 
 
-def test_element_name_padding_union_none_with_dash() -> None:
+def test_element_name_with_dash() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value-with-dash data="first" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_with_dash: Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_with_dash, Value)
+    assert root.value_with_dash.data == "first"
+
+
+def test_element_name_with_dash_union_none() -> None:
     xml_with_element = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
     <root>
@@ -257,3 +276,38 @@ def test_element_name_padding_union_none_with_dash() -> None:
     root = RootElement.from_string(xml_with_element.strip())
     assert isinstance(root.value_with_dash, Value)
     assert root.value_with_dash.data == "first"
+
+
+def test_element_name_with_dash_union() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root>
+        <value-with-dash data="first" />
+    </root>
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_with_dash: Value | list[Value]
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert isinstance(root.value_with_dash, Value)
+    assert root.value_with_dash.data == "first"
+
+
+def test_element_name_with_dash_union_none_empty() -> None:
+    xml_with_element = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    class Value(XmlClass):
+        data: str
+
+    class RootElement(XmlClass):
+        value_with_dash: None | Value
+
+    root = RootElement.from_string(xml_with_element.strip())
+    assert root.value_with_dash is None

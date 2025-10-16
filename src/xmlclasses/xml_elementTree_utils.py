@@ -15,10 +15,10 @@ def _get_child_from(tag: str, dom: ET.Element, *, single: bool = False) -> list[
 
     """
     if not single:
-        return [x for x in dom if x.tag == tag or x.tag == tag.rstrip("_")]
+        return [x for x in dom if x.tag == tag or x.tag == tag.rstrip("_") or x.tag == tag.replace("_", "-")]
 
     for child in dom:
-        if child.tag == tag or child.tag == tag.rstrip("_"):
+        if child.tag == tag or child.tag == tag.rstrip("_") or child.tag == tag.replace("_", "-"):
             return child
     msg = f'Could not find "{tag}" in "{dom.tag}"'
     raise ValueError(msg)
