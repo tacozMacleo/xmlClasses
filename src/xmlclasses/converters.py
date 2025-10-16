@@ -101,11 +101,11 @@ def unexpected_children(dom: ET.Element, cls: type) -> list[str]:
         or is_list(cls.__annotations__.get(x))
         or is_tuple(cls.__annotations__.get(x))  # TODO: Also check sub_annotations.
     ]
-    return [
+    return list({
         x.tag
         for x in dom
         if x.tag.rstrip("_") not in cls_annotations
-    ]
+    })
 
 def is_xml_text_field(obj: type) -> typing.TypeGuard[type[XmlTextField]]:
     return typing.get_origin(obj) is XmlTextField
@@ -190,7 +190,8 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
         try:
             # TODO(MBK): If d_type is a XmlClass, and Element is present, use it, and those errors.:
             return _get_value(name, d_type, dom, parent_name)
-        except ValueError:
+        except ValueError as e:
+            # print(f"{d_type=}", e)
             pass
     msg = f'Unable to convert "{name}"\'s value: "{dom.attrib[name]}" to any of ({", ".join(x.__name__ for x in typing.get_args(field_type))})'
     with error_handler(dom, name):

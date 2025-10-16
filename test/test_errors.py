@@ -19,7 +19,7 @@ def test_with_boolean() -> None:
     with pytest.raises(
         XmlParserError,
         match=re.escape(
-            "Error in \"value\" while parsing tag: \"root\", with attributes: {'value': 'kjgs'}\nBoolean value kjgs not in ['true', '1', 'yes', 'on'] or ['false', '0', 'no', 'off']"
+            "Error in \"value\" while parsing element: \"root\", with attributes: {'value': 'kjgs'}\nBoolean value kjgs not in ['true', '1', 'yes', 'on'] or ['false', '0', 'no', 'off']"
         ),
     ):
         RootAttribute.from_string(xml_with_attribute.strip())
@@ -278,11 +278,11 @@ def test_nested_deep_element_error() -> None:
     with pytest.raises(
         XmlParserError,
         match=re.escape(
-            """Error in "value" while parsing tag: "root".
-Error in "subValue" while parsing tag: "value".
-Error in "subsubValue" while parsing tag: "subValue".
-Error in "value_subsubValue" while parsing tag: "subsubValue".
-Error in "value_subsubValue" while parsing tag: "subsubValue", with attributes: {}
+            """Error in "value" while parsing element: "root".
+Error in "subValue" while parsing element: "value".
+Error in "subsubValue" while parsing element: "subValue".
+Error in "value_subsubValue" while parsing element: "subsubValue".
+Error in "value_subsubValue" while parsing element: "subsubValue", with attributes: {}
 Unable to convert "value_subsubValue"'s value: "data" to any of (int, float)""",
         ),
     ):
