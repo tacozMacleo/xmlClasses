@@ -81,7 +81,11 @@ def unexpected_text_field(dom: ET.Element, cls: type) -> str:
 
 
 def unexpected_attributes(dom: ET.Element, cls: type) -> list[str]:
-    cls_annotations = [x.rstrip("_") for x in cls.__annotations__ if not is_xml_class(cls.__annotations__.get(x))]
+    cls_annotations = [
+        x.rstrip("_").replace("_", "-")
+        for x in cls.__annotations__
+        if not is_xml_class(cls.__annotations__.get(x))
+    ]
     return [
         x
         for x in dom.attrib
@@ -173,7 +177,7 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
     child_tags = {x.tag for x in dom} | {x.tag + "_" for x in dom}
     if (
         name not in dom.keys()
-        and name.rstrip("_") not in dom.keys()
+        and name.rstrip("_").replace("_", "-") not in dom.keys()
         and name not in child_tags
         and not is_xml_text_field(field_type)
     ):
