@@ -126,6 +126,7 @@ Tests TODO:
 
 TODO:
 ===================================================================
+ * [ ] Make the error messages better for when there is a error deep inside a xmlClass.
  * [x] Make a test for typing.Any.
  * [ ] Added `defusedxml` as dependency. (Security reasons)
  * [x] Fix ALL type hints...
