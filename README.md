@@ -117,6 +117,11 @@ NOTE:
  * This is a work in progress, ATM it only parses the XML data, to a python class.
  * UNSURE: Do None type hint as the only one even make sense?
 
+Tests TODO:
+===================================================================
+ * [ ] Test `XmlClass | None` case, where there is parsing error in XmlClass.
+ * [ ] Test `OneTwo: typing.Literal["firstPasser", "secondPasser"] | None` case, where it do not Exist.
+ * [ ] Test `xmlClass | AnotherXmlClass` case, with different Names.
 
 TODO:
 ===================================================================

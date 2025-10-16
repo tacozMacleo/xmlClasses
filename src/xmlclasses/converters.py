@@ -188,6 +188,7 @@ def _handle_union(name: str, field_type: XmlBaseType, dom: ET.Element | str, par
 
     for d_type in typing.get_args(field_type):
         try:
+            # TODO(MBK): If d_type is a XmlClass, and Element is present, use it, and those errors.:
             return _get_value(name, d_type, dom, parent_name)
         except ValueError:
             pass
