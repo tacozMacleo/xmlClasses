@@ -81,6 +81,7 @@ def test_with_none() -> None:
     root = RootString.from_string(xml_with_none.strip())
     assert root.data is None
 
+
 def test_with_uuid() -> None:
     uuid_value = uuid.uuid4()
     xml_with_uuid = f"""
@@ -246,6 +247,34 @@ def test_with_literal_int() -> None:
     assert root.value == 1
 
 
+def test_with_optional_literal_str() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="data" />
+    """
+
+    class RootAttribute(XmlClass):
+        value: typing.Literal["data"] | None
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, str)
+    assert root.value == "data"
+
+
+def test_with_optional_literal_none() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    class RootAttribute(XmlClass):
+        value: typing.Literal["data"] | None
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, str)
+    assert root.value == "data"
+
+
 def test_with_enum() -> None:
     xml_with_attribute = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -258,6 +287,42 @@ def test_with_enum() -> None:
 
     class RootAttribute(XmlClass):
         value: DataEnum
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, DataEnum)
+    assert root.value == DataEnum.DATA
+
+
+def test_with_optional_enum_value() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root value="data" />
+    """
+
+    class DataEnum(enum.Enum):
+        DATA = "data"
+        NO_DATA = "no_data"
+
+    class RootAttribute(XmlClass):
+        value: DataEnum | None
+
+    root = RootAttribute.from_string(xml_with_attribute.strip())
+    assert isinstance(root.value, DataEnum)
+    assert root.value == DataEnum.DATA
+
+
+def test_with_optional_enum_None() -> None:
+    xml_with_attribute = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+    <root />
+    """
+
+    class DataEnum(enum.Enum):
+        DATA = "data"
+        NO_DATA = "no_data"
+
+    class RootAttribute(XmlClass):
+        value: DataEnum | None
 
     root = RootAttribute.from_string(xml_with_attribute.strip())
     assert isinstance(root.value, DataEnum)
