@@ -1,6 +1,8 @@
 import builtins
 import datetime
 import enum
+import functools
+import operator
 import pathlib
 import types
 import typing
@@ -20,7 +22,7 @@ class XmlClass:
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
 
-        def init(self: XmlClass, **kwargs) -> None:
+        def __init__(self: XmlClass, **kwargs) -> None: # noqa: N807
             for k in kwargs:
                 if k not in cls.__annotations__:
                     msg = f"got an unexpected keyword argument '{k}'"
@@ -29,23 +31,58 @@ class XmlClass:
                 # TODO: Convert to k_type or cast error on wrong type.
                 setattr(self, k, kwargs[k])
 
-        init.__name__ = "__init__"
-        cls.__init__ = init
-
-        def eq(self: XmlClass, other: XmlClass) -> bool:
-            if set(self.__annotations__.keys()) ^ set(other.__annotations__.keys()):
-                return False
-            return all(getattr(self, k) == getattr(other, k) for k in self.__annotations__)
-
-        eq.__name__ = "__eq__"
-        cls.__eq__ = eq
-        cls.__ne__ = lambda self, x: not cls.__eq__(self, x)
+        cls.__init__ = __init__
         cls.__slots__ = tuple(cls.__annotations__.keys())
 
         ## TODO: Use this to generate the wanted stuff.
         ## cls.__dataclass_transform__
 
     # TODO: Add def to_string(self) -> str:
+
+    def __eq__(self: "XmlClass", other: "XmlClass") -> bool:
+        if set(self.__annotations__.keys()) ^ set(other.__annotations__.keys()):
+            return False
+        return all(getattr(self, k) == getattr(other, k) for k in self.__annotations__)
+
+    def __ne__(self: "XmlClass", other: "XmlClass") -> bool:
+        return not self.__eq__(other)
+
+    def __repr_values__(self) -> list[str]:
+        return [
+            (f"{k}={getattr(self, k)!r}")
+            for k in self.__annotations__
+            if not is_xml_class(type(getattr(self, k)))
+            # and getattr(self, k) is not None  # TODO(MBK): Make this optional.
+        ]
+
+    def __repr__xmlclasss__(self) -> list[str]:
+        return functools.reduce(operator.iadd, [
+            f"{k}={getattr(self, k)}".split("\n")
+            for k in self.__annotations__
+            if is_xml_class(type(getattr(self, k)))
+        ], [])
+
+    def __str_xmlclasss(self, pat: str) -> str:
+        values = self.__repr__xmlclasss__()
+        pt = f"\n{pat}"
+        return pt.join(values) if values else ""
+
+    def __str_values(self, pat: str) -> str:
+        values = self.__repr_values__()
+        pt = f"\n{pat}"
+        return pt.join(values)
+
+    def __str__(self) -> str:
+        # TODO(MBK): CLEAN UP!!
+        # TODO(MBK): Somehow make a option to hide the None values.
+        # TODO(MBK): Fix lists and tuples.
+        return (
+            f"{self.__class__.__name__}(\n   "
+            + self.__str_values("   ") + "\n"
+            + "   " + self.__str_xmlclasss("   ")
+            + "\n)"
+        )
+
 
     @classmethod
     def from_element(cls, dom: ET.Element) -> typing.Self:
@@ -256,7 +293,7 @@ def _get_value(
     parent_name: str,
 ) -> T | str | None:
     with error_handler(dom, name):
-        match field_type:
+        match field_type:  # When not use list of if-cases?
             case _ if is_xml_text_field(field_type):
                 return _handle_xml_text_field(name, field_type, dom, parent_name)
             case _ if is_xml_class(field_type):
@@ -299,6 +336,7 @@ def _convert(
     field_type: type[T] | None,
     data: str | ET.Element | None,
 ) -> T | str | None:
+    class Group: NoneType = type(None)
     match field_type:
         case builtins.int | builtins.float | builtins.str | uuid.UUID | pathlib.Path:
             return field_type(data)
@@ -312,7 +350,7 @@ def _convert(
         case typing.Any:
             return data
 
-        case None:
+        case None | Group.NoneType:  ## class Group: NoneType = type(None)
             return _handle_none(field_type, data)
 
         case _ if is_literal(field_type):

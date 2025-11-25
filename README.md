@@ -117,19 +117,26 @@ NOTE:
  * This is a work in progress, ATM it only parses the XML data, to a python class.
  * UNSURE: Do None type hint as the only one even make sense?
  * UNSURE: Should null value be None type hint, and something else for optional?
+ * UNSURE: Should have an obj Definer. That forces the check to only use that object type?
 
 Tests TODO:
 ===================================================================
  * [ ] Test `XmlClass | None` case, where there is parsing error in XmlClass.
  * [ ] Test `OneTwo: typing.Literal["firstPasser", "secondPasser"] | None` case, where it do not Exist.
- * [ ] Test `xmlClass | AnotherXmlClass` case, with different Names.
+ * [ ] Test `xmlClass | AnotherXmlClass` case, with same Names.
 
 TODO:
 ===================================================================
- * [ ] Make the error messages better for when there is a error deep inside a xmlClass.
+ * [ ] Find a good way to handle the xml namespaces.
+ * [ ] Make the error messages better for when there is a error deep inside a xmlClass, & there are other options.
  * [x] Make a test for typing.Any.
  * [ ] Added `defusedxml` as dependency. (Security reasons)
  * [x] Fix ALL type hints...
  * [ ] Add support for decoder and encoder.
+ * [x] Add `__str__` method.
  * [ ] Add support for custom parsers. (XmlDataParser[MyParserOfData])
  * [x] Make good and useful error messages.
+ * [ ] Add a Mutual exclusion feature, for Elements and/or Attributes. 
+ * [ ] Add optoion for generate a Xmlclass based on xml-file structure.
+
+
